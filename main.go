@@ -8,6 +8,43 @@ import (
 	"path/filepath"
 )
 
+type Options struct {
+	Name   string
+	Module string
+	Make   bool
+}
+
+// Helper that parses the command line arguments.
+func parseFlags(args []string) (Options, error) {
+	opts := Options{}
+	opts.Name = args[2]
+
+	for i := 3; i < len(args); i++ {
+		switch args[i] {
+		case "-m", "--module":
+			if i+1 >= len(args) {
+				return opts, errors.New("--module missing module name")
+			}
+
+			opts.Module = args[i+1]
+			i++
+		case "-n", "--name":
+			if i+1 >= len(args) {
+				return opts, errors.New("missing project name")
+			}
+
+			opts.Name = args[i+1]
+			i++
+		case "-M", "--make":
+			opts.Make = true
+		default:
+			return opts, errors.New("unknown option: " + args[i])
+		}
+	}
+
+	return opts, nil
+}
+
 // Helpers that define the error system.
 func fail(msg string) {
 	fmt.Println("Error:", msg)
@@ -106,8 +143,45 @@ func main() {
 	return nil
 }
 
+// Helper that creates a Makefile in the given path.
+func createMakefile(path string) error {
+	makefilePath := filepath.Join(path, "Makefile")
+
+	if _, err := os.Stat(makefilePath); err == nil {
+		return nil
+	}
+
+	appName := filepath.Base(path)
+
+	makefileContent := fmt.Sprintf(`APP_NAME := %s
+CMD_PATH := ./cmd
+BIN_PATH := bin
+
+.PHONY: run build clean test
+
+run:
+	go run $(CMD_PATH)
+
+build:
+	go build -o $(BIN_PATH)/$(APP_NAME) $(CMD_PATH)
+
+clean:
+	rm -rf $(BIN_PATH)
+
+test:
+	go test ./...
+`, appName)
+
+	err := os.WriteFile(makefilePath, []byte(makefileContent), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Helper that creates a new project in the given path.
-func createProject(path string, module string) error {
+func createProject(path string, module string, makeEnabled bool) error {
 	check(ensureDir(path))
 	check(createStructure(path))
 
@@ -118,31 +192,31 @@ func createProject(path string, module string) error {
 	check(initGoModule(path, module))
 	check(initGit(path))
 	check(createFiles(path, module))
+	if makeEnabled {
+		check(createMakefile(path))
+	}
 
 	return nil
 }
 
 // main function
 func main() {
-	if len(os.Args) < 3 {
-		fail("Usage: forge new <project-name | .> [--module github.com/username/repo]")
+	if len(os.Args) < 2 {
+		fail("Usage: forge new <project-name | .>")
 	}
 
 	cmd := os.Args[1]
-	name := os.Args[2]
 
 	if cmd != "new" {
 		fail("Unknown command: " + cmd)
 	}
 
-	module := ""
-	if len(os.Args) >= 5 && os.Args[3] == "--module" {
-		module = os.Args[4]
-	}
-
-	path, err := resolvePath(name)
+	opts, err := parseFlags(os.Args)
 	check(err)
 
-	check(createProject(path, module))
+	path, err := resolvePath(opts.Name)
+	check(err)
+
+	check(createProject(path, opts.Module, opts.Make))
 	fmt.Println("OK:", path)
 }
