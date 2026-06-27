@@ -1,6 +1,6 @@
 # forge
 
-Forge is a CLI tool to create new projects.
+Forge is a CLI tool to create new projects using go.
 
 ## Usage
 
