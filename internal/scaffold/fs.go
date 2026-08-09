@@ -9,6 +9,7 @@ import (
 
 var errDirExists = errors.New("path exists and is not a directory")
 
+// ensureDir checks if the path does not exists and returns an error or nil if it does
 func ensureDir(path string) error {
 	info, err := os.Stat(path)
 
@@ -30,6 +31,7 @@ func ensureDir(path string) error {
 	return nil
 }
 
+// createStructure creates the parent folders or the code base
 func createStructure(base string) error {
 	dirs := []string{
 		"cmd",

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// createFiles creates the files and add placeholder content in them
 func createFiles(base string, module string) error {
 	// create main.go file
 	mainPath := filepath.Join(base, "cmd", "main.go")
@@ -26,9 +27,9 @@ func main() {
 
 	// create README.md file
 	readMePath := filepath.Join(base, "README.md")
-	readMeContent := fmt.Sprintf(`#This project was started by forge. 
+	readMeContent := `#This project was started by forge. 
 repo @ https://github.com/mcchukwu/forge
-	`)
+	`
 
 	if err := os.WriteFile(readMePath, []byte(readMeContent), 0644); err != nil {
 		return fmt.Errorf("create file README.md failed: %w", err)
@@ -36,11 +37,11 @@ repo @ https://github.com/mcchukwu/forge
 
 	// create .gitignore file
 	gitignorePath := filepath.Join(base, ".gitignore")
-	gitignoreContent := fmt.Sprintf(`bin/*
+	gitignoreContent := `bin/*
 .log
 
 # Extend ignore patterns here
-	`)
+	`
 
 	if err := os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644); err != nil {
 		return fmt.Errorf("create file .gitignore failed: %w", err)

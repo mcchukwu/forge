@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// createMakefile creates a new make file in the base directory
 func createMakefile(base string) error {
 	makefilePath := filepath.Join(base, "Makefile")
 
@@ -15,24 +16,26 @@ func createMakefile(base string) error {
 
 	appName := filepath.Base(base)
 
-	makefileContent := fmt.Sprintf(`APP_NAME := %s
-CMD_PATH := ./cmd
-BIN_PATH := bin
+	makefileContent := fmt.Sprintf(
+		`
+		APP_NAME := %s
+		CMD_PATH := ./cmd
+		BIN_PATH := bin
 
-.PHONY: run build clean test
+		.PHONY: run build clean test
 
-run: 
-	go run $(CMD_PATH)
+		run: 
+			go run $(CMD_PATH)
 
-build:
-	go build -o $(BIN_PATH)/$(APP_NAME) $(CMD_PATH)
+		build:
+			go build -o $(BIN_PATH)/$(APP_NAME) $(CMD_PATH)
 
-clean:
-	rm -rf $(BIN_PATH)
+		clean:
+			rm -rf $(BIN_PATH)
 
-test:
-	go test ./...
-	`, appName)
+		test:
+			go test ./...
+		`, appName)
 
 	if err := os.WriteFile(makefilePath, []byte(makefileContent), 0644); err != nil {
 		return fmt.Errorf("create file Makefile failed: %w", err)
