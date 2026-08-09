@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-// createFiles creates the files and add placeholder content in them
+// createFiles creates the files and add placeholder content in them (maintain indentation of placeholder text)
 func createFiles(base string, module string) error {
 	// create main.go file
 	mainPath := filepath.Join(base, "cmd", "main.go")
