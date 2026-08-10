@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -8,13 +9,26 @@ import (
 	"github.com/mcchukwu/forge/internal/scaffold"
 )
 
+var version = "dev"
+
 func main() {
-	opts, err := cli.ParseArgs(os.Args)
+	opts, err := cli.ParseArgs(os.Args[1:])
 	if err != nil {
-		fmt.Printf("Error: %v", err)
+		switch {
+		case errors.Is(err, cli.ErrHelp):
+			fmt.Print(cli.Usage)
+			return
+		case errors.Is(err, cli.ErrVersion):
+			fmt.Printf("forge %s\n", version)
+			return
+		default:
+			fmt.Fprintf(os.Stderr, "Error: %v\n\n%s", err, cli.Usage)
+			os.Exit(1)
+		}
 	}
 
 	if err := scaffold.Run(opts); err != nil {
-		fmt.Printf("Error: %v", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }

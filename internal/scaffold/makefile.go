@@ -6,38 +6,39 @@ import (
 	"path/filepath"
 )
 
-// createMakefile creates a new make file in the base directory (maintain indentation of placeholder test)
-func createMakefile(base string) error {
+// createMakefile writes a Makefile in base. It reports whether a new file was
+// written; existing Makefiles are left untouched. Recipe lines use real tabs,
+// as required by make.
+func createMakefile(base, app string) (bool, error) {
 	makefilePath := filepath.Join(base, "Makefile")
 
 	if _, err := os.Stat(makefilePath); err == nil {
-		return nil
+		return false, nil
 	}
 
-	appName := filepath.Base(base)
+	content := fmt.Sprintf(
+		"APP_NAME := %s\n"+
+			"CMD_PATH := ./cmd/%s\n"+
+			"BIN_PATH := bin\n"+
+			"\n"+
+			".PHONY: run build clean test\n"+
+			"\n"+
+			"run:\n"+
+			"\tgo run $(CMD_PATH)\n"+
+			"\n"+
+			"build:\n"+
+			"\tgo build -o $(BIN_PATH)/$(APP_NAME) $(CMD_PATH)\n"+
+			"\n"+
+			"clean:\n"+
+			"\trm -rf $(BIN_PATH)\n"+
+			"\n"+
+			"test:\n"+
+			"\tgo test ./...\n",
+		app, app)
 
-	makefileContent := fmt.Sprintf(`APP_NAME := %s
-CMD_PATH := ./cmd
-BIN_PATH := bin
-
-.PHONY: run build clean test
-
-run: 
-	go run $(CMD_PATH)
-
-build:
-	go build -o $(BIN_PATH)/$(APP_NAME) $(CMD_PATH)
-
-clean:
-	rm -rf $(BIN_PATH)
-
-test:
-	go test ./...
-		`, appName)
-
-	if err := os.WriteFile(makefilePath, []byte(makefileContent), 0644); err != nil {
-		return fmt.Errorf("create file Makefile failed: %w", err)
+	if err := os.WriteFile(makefilePath, []byte(content), 0644); err != nil {
+		return false, fmt.Errorf("create Makefile: %w", err)
 	}
 
-	return nil
+	return true, nil
 }

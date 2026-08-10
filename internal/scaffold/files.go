@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 )
 
-// createFiles creates the files and add placeholder content in them (maintain indentation of placeholder text)
-func createFiles(base string, module string) error {
-	// create main.go file
-	mainPath := filepath.Join(base, "cmd", "main.go")
+// createFiles writes the project's source files and returns the list of
+// files written, relative to base.
+func createFiles(base, module string) ([]string, error) {
+	app := filepath.Base(base)
+
 	mainContent := fmt.Sprintf(`package main
-	
+
 import (
 	"fmt"
 )
@@ -19,33 +20,39 @@ import (
 func main() {
 	fmt.Println("Starting %s")
 }
-	`, module)
-
-	if err := os.WriteFile(mainPath, []byte(mainContent), 0644); err != nil {
-		return fmt.Errorf("create file main.go failed: %w", err)
+`, app)
+	mainPath := filepath.Join(base, "cmd", app, "main.go")
+	if err := os.MkdirAll(filepath.Dir(mainPath), 0755); err != nil {
+		return nil, fmt.Errorf("create cmd/%s: %w", app, err)
+	}
+	if err := writeFile(mainPath, []byte(mainContent)); err != nil {
+		return nil, fmt.Errorf("create main.go: %w", err)
 	}
 
-	// create README.md file
-	readMePath := filepath.Join(base, "README.md")
-	readMeContent := `#This project was started by forge. 
-repo @ https://github.com/mcchukwu/forge
-	`
+	readmeContent := fmt.Sprintf(`# %s
 
-	if err := os.WriteFile(readMePath, []byte(readMeContent), 0644); err != nil {
-		return fmt.Errorf("create file README.md failed: %w", err)
+This project was scaffolded with [forge](https://github.com/mcchukwu/forge).
+`, app)
+	if err := writeFile(filepath.Join(base, "README.md"), []byte(readmeContent)); err != nil {
+		return nil, fmt.Errorf("create README.md: %w", err)
 	}
 
-	// create .gitignore file
-	gitignorePath := filepath.Join(base, ".gitignore")
 	gitignoreContent := `bin/*
-.log
+*.log
 
-# Extend ignore patterns here
-	`
-
-	if err := os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644); err != nil {
-		return fmt.Errorf("create file .gitignore failed: %w", err)
+# Add project-specific ignore patterns below.
+`
+	if err := writeFile(filepath.Join(base, ".gitignore"), []byte(gitignoreContent)); err != nil {
+		return nil, fmt.Errorf("create .gitignore: %w", err)
 	}
 
-	return nil
+	return []string{
+		filepath.Join("cmd", app, "main.go"),
+		"README.md",
+		".gitignore",
+	}, nil
+}
+
+func writeFile(path string, content []byte) error {
+	return os.WriteFile(path, content, 0644)
 }
