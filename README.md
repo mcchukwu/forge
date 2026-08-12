@@ -16,7 +16,7 @@ Forge is a CLI tool that scaffolds new Go projects with a clean, standard layout
 ## Install
 
 ```bash
-go install github.com/mcchukwu/forge/cmd/forge@latest
+go install github.com/mcchukwu/forge@main
 ```
 
 ## Usage
